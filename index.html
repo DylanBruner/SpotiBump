@@ -60,10 +60,45 @@
             background: #1DB954;
             animation: bump 0.5s ease;
         }
+        button.bump.loading {
+            background: #666;
+            cursor: not-allowed;
+            position: relative;
+        }
+        button.bump.loading::after {
+            content: '';
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            margin: auto;
+            border: 2px solid transparent;
+            border-top-color: #ffffff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+        button.bump.loading span {
+            opacity: 0;
+        }
         @keyframes bump {
             0% { transform: scale(1); }
             50% { transform: scale(1.1); }
             100% { transform: scale(1); }
+        }
+        @keyframes spin {
+            0% { transform: translate(-50%, -50%) rotate(0deg); }
+            100% { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+        .bump-success {
+            animation: bumpSuccess 0.6s ease;
+        }
+        @keyframes bumpSuccess {
+            0% { transform: scale(1); }
+            25% { transform: scale(1.2); background: #1ed760; }
+            50% { transform: scale(1.1); background: #1ed760; }
+            100% { transform: scale(1); background: #1DB954; }
         }
         .hidden {
             display: none;
@@ -84,7 +119,7 @@
                 <div class="button-container">
                     <button id="like-button">❤️ Like</button>
                     <button id="dislike-button" class="dislike">👎 Dislike</button>
-                    <button id="bump-button" class="bump">🔄 Bump</button>
+                    <button id="bump-button" class="bump"><span>🔄 Bump</span></button>
                 </div>
             </div>
         </div>
@@ -387,10 +422,11 @@
                 const trackId = data.item.id;
                 console.log('Bumping track ID:', trackId);
 
-                // Disable buttons during bump
+                // Disable buttons and show loading state
                 likeButton.disabled = true;
                 dislikeButton.disabled = true;
                 bumpButton.disabled = true;
+                bumpButton.classList.add('loading');
 
                 // First, remove from saved tracks
                 await makeAuthenticatedRequest(`https://api.spotify.com/v1/me/tracks?ids=${trackId}`, {
@@ -419,6 +455,10 @@
                 const isSaved = await checkIfTrackSaved(trackId);
                 console.log('Track saved status after bump:', isSaved);
 
+                // Remove loading state and show success animation
+                bumpButton.classList.remove('loading');
+                bumpButton.classList.add('bump-success');
+
                 // Update button state
                 updateLikeButtonState(isSaved);
 
@@ -427,10 +467,16 @@
                 dislikeButton.disabled = false;
                 bumpButton.disabled = false;
 
+                // Remove success animation after it completes
+                setTimeout(() => {
+                    bumpButton.classList.remove('bump-success');
+                }, 600);
+
                 console.log('Successfully bumped track');
             } catch (error) {
                 console.error('Error in bump button handler:', error);
-                // Re-enable buttons in case of error
+                // Remove loading state and re-enable buttons in case of error
+                bumpButton.classList.remove('loading');
                 likeButton.disabled = false;
                 dislikeButton.disabled = false;
                 bumpButton.disabled = false;
